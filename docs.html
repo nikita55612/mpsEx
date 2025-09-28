@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" type="image/png" href="./images/icon16.png">
+	<link rel="stylesheet" href="base.css">
+	<title>Документация</title>
+	<style>
+		img {
+			border: solid 1px #121212;
+			border-radius: 6px;
+			margin-top: 8px;
+		}
+
+		pre {
+			border: solid 1px #121212;
+			border-radius: 6px;
+			background: #C4C4C8;
+			padding: 6px;
+			white-space: pre-wrap;
+			word-break: break-all;
+		}
+
+		code {
+			word-break: break-all;
+		}
+	</style>
+</head>
+
+<body>
+	<div style="height:28px;"></div>
+	<div style="background-color:#f2f2f2;max-width:800px;border:3px double;margin:auto;padding:14px">
+		<h1>Документация</h1>
+
+		<p>Sun Sep 28 20:52:11 MSK 2025</p>
+
+		<hr>
+
+		<h3>Ввод запроса</h3>
+
+		<p>
+			В меню расширения доступно текстовое поле для ввода запроса.
+		</p>
+
+		<img src="./assets/ex_input_menu.png" alt="Пример меню" width="360">
+
+		<p>
+			Запросом является ссылка на каталог маркетплейса (страницу магазина, категорию или результат поиска).
+		</p>
+
+		<ul>
+			<li><b>Ozon</b> — можно использовать как полную, так и короткую ссылку (например: <b>/seller/0</b>).</li>
+			<li><b>Wildberries</b> — требуется всегда указывать полную ссылку.</li>
+		</ul>
+
+		<p>
+			Поддерживаются любые фильтры, доступные в ссылке.
+		</p>
+
+		<h3>Примеры корректного ввода</h3>
+
+		<pre><code>/seller/0
+/category/15500/
+/category/produkty-pitaniya-9200/?sorting=new&type=58110
+https://www.ozon.ru/category/elektroinstrumenty-9857/makita-26303262/?opened=brand
+https://www.wildberries.ru/catalog/elektronika/smartfony-i-telefony/vse-smartfony
+https://www.wildberries.ru/catalog/tsvety?page=1&sort=popular&priceU=100000%3B1000000&f368921=368922&f14177451=15000203</code></pre>
+
+		<h3>Настройка лимита</h3>
+
+		<p>Укажите максимальное количество товаров для парсинга. Фактическое число может немного превышать лимит, так
+			как парсинг происходит постранично.</p>
+
+		<ul>
+			<li>Ozon: <=12 товаров на странице</li>
+			<li>Wildberries: <=100 товаров на странице</li>
+		</ul>
+
+		<h3>Множественный ввод</h3>
+
+		<p>
+			Можно указать несколько каталогов одновременно:
+		</p>
+
+		<pre><code>/seller/0
+/category/15500/
+/category/9200/</code></pre>
+		<p>
+			Каждая ссылка на новой строке создает отдельный отчет.
+		</p>
+
+		<p>
+			Лимит применяется к каждому каталогу отдельно.
+		</p>
+
+		<p>
+			Если ссылки указаны через запятую, они будут объединены в один отчет:
+		</p>
+		<pre><code>/seller/0,/category/15500,/category/9200</code></pre>
+
+		<p>
+			Лимит применяется к каждому каталогу отдельно. В примере выше с лимитом 12 товаров, общее количество составит 36.
+		</p>
+
+		<p>
+			Также можно сгруппировать ссылки с разных маркетплейсов:
+		</p>
+		<pre><code>https://www.ozon.ru/category/velosipedy-11002/,
+https://www.wildberries.ru/catalog/sport/vidy-sporta/velosport/velosipedy</code></pre>
+		<p>
+			Однако такой способ не рекомендуется. В разных системах могут совпадать <code>id</code> товаров, из-за чего
+			часть данных затрется. Например, если у товара на Ozon и у товара на Wildberries окажется одинаковый
+			<code>id</code>, в таблицу попадет только один из них.
+		</p>
+		<p>
+			Все описанные способы можно комбинировать для большей гибкости. Например:
+		</p>
+		<pre><code>https://www.ozon.ru/seller/luma-stars-201204/,https://www.ozon.ru/seller/deko-russia-11872/,https://www.ozon.ru/seller/megamaster-2901497/
+https://www.wildberries.ru/catalog/elektronika/smartfony-i-telefony/vse-smartfony?page=1&sort=popular&fbrand=153038065%3B5772%3B48914%3B6049&fcolor=16777215,https://www.wildberries.ru/catalog/elektronika/noutbuki-pereferiya/noutbuki-ultrabuki?page=1&sort=popular&fbrand=5786%3B3859&fcolor=16777215</code></pre>
+		<p>
+			В этом случае будет создано два отчета:
+		</p>
+		<ul>
+			<li>
+				Первый отчет содержит товары трёх продавцов электроинструментов на Ozon, без фильтов.
+			</li>
+			<li>
+				Второй отчет включает смартфоны белого цвета брендов Apple, Samsung, Realme, Google Pixel и ноутбуки белого цвета брендов Asus и Acer с маркетплейса Wildberries.
+			</li>
+		</ul>
+
+		<p>Итог по вводу запросов:</p>
+
+		<ul>
+			<li><strong>Каждая новая строка</strong> — создает отдельный отчет</li>
+			<li><strong>Ссылки через запятую</strong> — объединяют каталоги в один отчет</li>
+			<li><strong>Лимит товаров</strong> — применяется к каждому каталогу отдельно</li>
+		</ul>
+
+		<hr>
+
+		<h3>Отчет</h3>
+
+		<p>
+			После завершения парсинга откроется отчет с результатами.
+		</p>
+
+		<img src="./assets/report_log.png" alt="Лог отчета" width="300">
+
+		<p>
+			При успешном выполнении в отчете будет представлена таблица с товарами.
+		</p>
+
+		<h3>Основная таблица товаров</h3>
+
+		<img src="./assets/report_table.png" alt="Пример таблицы отчета" width="600">
+
+		<p>
+			Таблицу можно скачать в формате CSV — это простой текстовый формат для хранения табличных данных. Файл CSV можно открыть в Excel или любом другом редакторе таблиц.
+		</p>
+
+		<p>
+			Информацию в таблице отчета можно обновлять.
+		</p>
+
+		<h3>Таблица изменений</h3>
+
+		<p>
+			При обновлении отчета система автоматически сравнивает новые данные с предыдущими. Если цена товара
+			изменилась, этот товар добавляется в отдельную таблицу изменений, что позволяет легко отслеживать динамику цен.
+		</p>
+
+		<img src="./assets/report_chTable.png" alt="Таблица изменений" width="600">
+		<img src="./assets/report_chTable_1.png" alt="Пример изменений 1" width="600">
+		<img src="./assets/report_chTable_2.png" alt="Пример изменений 2" width="600">
+		<img src="./assets/report_chTable_3.png" alt="Пример изменений 3" width="600">
+
+		<hr>
+
+		<h3>Страница каталога</h3>
+
+		<p>
+			Расширение поддерживает встраивание HTML-разметки на страницы каталогов Ozon и Wildberries для прямого парсинга.
+		</p>
+
+		<p>
+			Для парсинга каталога введите лимит и нажмите на ягодку.
+		</p>
+
+		<img src="./assets/oz_i.png" alt="" width="600">
+		<img src="./assets/wb_ic.png" alt="" width="600">
+		<img src="./assets/oz_ic.png" alt="" width="600">
+		<img src="./assets/wb_ii.png" alt="" width="600">
+		<img src="./assets/oz_is.png" alt="" width="600">
+		<img src="./assets/wb_is.png" alt="" width="600">
+		<img src="./assets/oz_iss.png" alt="" width="600">
+	</div>
+</body>
+
+</html>
