@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
 					sendResponse(undefined);
 				}
 				if (msg.data.open) {
-					renderReport(result, data.active || false);
+					renderReport(result, msg.data.active || false);
 				}
 			});
 			return true;
