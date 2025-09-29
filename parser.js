@@ -317,7 +317,7 @@ function getWbImage(id) {
 		else if (n <= 6437) basket = "31";
 		else basket = "32";
 
-		return `https://basket-${basket}.wbbasket.ru/vol${vol}/part${part}/${id}/icons/c516x688/1.webp`;
+		return `https://basket-${basket}.wbbasket.ru/vol${vol}/part${part}/${id}/images/c516x688/1.webp`;
 
 	} catch (_) {
 		return "";

@@ -1,8 +1,8 @@
 import Parser from "./parser.js";
 
-async function renderReport(result) {
+async function renderReport(result, active = true) {
 	const tab = await chrome.tabs.create({
-		url: chrome.runtime.getURL('report.html')
+		url: chrome.runtime.getURL('report.html'), active
 	});
 
 	chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
 					sendResponse(undefined);
 				}
 				if (msg.data.open) {
-					renderReport(result);
+					renderReport(result, data.active || false);
 				}
 			});
 			return true;
@@ -37,10 +37,14 @@ const SUPPORTED_SITES = [
 ];
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+	if (!tab.active) return;
+	if (!tab.url) return;
 	if (changeInfo.status !== "complete") return;
 
 	const isSupported = SUPPORTED_SITES.some(site => tab.url?.startsWith(site));
 	if (!isSupported) return;
+
+	if (tab.url?.startsWith("https://www.ozon.ru/api/")) return;
 
 	const tabUrl = new URL(tab.url);
 	const pathArray = tabUrl.pathname.split("/");
@@ -61,7 +65,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
-	console.log(reason);
 	if (reason === 'install') {
 		chrome.tabs.create({ url: "./docs.html" });
 	}

@@ -1,6 +1,6 @@
 {
 	"name": "mpsEx",
-	"description": "Парсер тоговой площадоки Ozon",
+	"description": "Парсер каталогов тоговых площадок Ozon и Wildberries",
 	"version": "1.0",
 	"manifest_version": 3,
 	"action": {

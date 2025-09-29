@@ -271,6 +271,7 @@ const updateReport = () => {
 				limit: lastReportData.params.limit,
 				open: false,
 				return: true,
+				active: false
 			},
 		},
 		(response) => {

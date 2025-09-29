@@ -94,6 +94,7 @@ function createEmbeddedElement(top = 0) {
 					limit: parseInt(limitInput.value || "0", 10),
 					open: true,
 					return: false,
+					active: true,
 				}
 			}, (_) => resolve());
 		});

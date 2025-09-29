@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		chrome.tabs.create({ url: "./docs.html" });
 	});
 
-	submitBtn.addEventListener("click", () => {
+	submitBtn.addEventListener("click", async () => {
 		if (!inputQuery.value) {
 			return;
 		}
@@ -22,26 +22,45 @@ document.addEventListener("DOMContentLoaded", () => {
 			inputQuery.value = "/seller/0";
 			limitInput.value = "1";
 		}
+
+		submitBtn.disabled = true;
+		limitInput.style.display = "none";
+		status.textContent = "Загрузка...";
+		status.style.color = "green";
+
 		let lines = new Set(inputQuery.value.trim().split("\n"));
-		for (const line of lines) {
-			submitBtn.disabled = true;
-			limitInput.style.display = "none"
-			status.textContent = "Загрузка...";
-			status.style = "color:green;";
-			chrome.runtime.sendMessage({
-				action: "parseCatalog",
-				data: {
-					query: line,
-					limit: parseInt(limitInput.value || "0", 10),
-					open: true,
-					return: false,
-				}
-			}, (_) => {
-				submitBtn.disabled = false;
-				limitInput.style.display = "block"
-				status.textContent = "";
+		const active = lines.length == 1;
+
+		for (var line of lines) {
+			line = line.trim();
+
+			if (line.length <= 1) {
+				continue;
+			}
+
+			console.log(line);
+
+			await new Promise((resolve) => {
+				chrome.runtime.sendMessage({
+					action: "parseCatalog",
+					data: {
+						query: line,
+						limit: parseInt(limitInput.value || "0", 10),
+						open: true,
+						return: false,
+						active
+					}
+				}, (response) => {
+					resolve(response);
+				});
 			});
+
+			await new Promise(resolve => setTimeout(resolve, 100));
 		}
+
+		submitBtn.disabled = false;
+		limitInput.style.display = "block";
+		status.textContent = "";
 		inputQuery.value = "";
 	});
 });
