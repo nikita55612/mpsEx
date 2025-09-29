@@ -484,6 +484,7 @@ async function parseProductCatalog(query, limit = 0) {
 
 	try {
 		const querys = [...new Set(query.split(","))];
+
 		if (querys.length > 1) {
 			result.data.items = {};
 			let nextRes;

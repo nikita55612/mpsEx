@@ -6,10 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	const status = document.getElementById("status");
 	const submitBtn = document.getElementById("submitBtn");
 
-	inputQuery.addEventListener("input", (event) => {
-		console.log(event);
-	});
-
 	docs.addEventListener("click", () => {
 		chrome.tabs.create({ url: "./docs.html" });
 	});
@@ -28,8 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		status.textContent = "Загрузка...";
 		status.style.color = "green";
 
-		let lines = new Set(inputQuery.value.trim().split("\n"));
-		const active = lines.length == 1;
+		let lines = [...new Set(inputQuery.value.trim().split("\n"))];
+		const active = lines.length <= 1;
 
 		for (var line of lines) {
 			line = line.trim();
@@ -37,8 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			if (line.length <= 1) {
 				continue;
 			}
-
-			console.log(line);
 
 			await new Promise((resolve) => {
 				chrome.runtime.sendMessage({
