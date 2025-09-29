@@ -44,7 +44,7 @@ function createEmbeddedElement(top = 0) {
 	const image = document.createElement("img");
 	Object.assign(image, {
 		id: "_mpsEx___submitBtn",
-		src: chrome.runtime.getURL("images/icon128.png"),
+		src: chrome.runtime.getURL("icons/icon128.png"),
 		width: "26",
 		height: "26",
 	});
