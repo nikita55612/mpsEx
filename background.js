@@ -32,15 +32,15 @@ chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
 });
 
 const SUPPORTED_SITES = [
-    "https://www.ozon.ru/",
-    "https://www.wildberries.ru/"
+	"https://www.ozon.ru/",
+	"https://www.wildberries.ru/"
 ];
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.status !== "complete") return;
+	if (changeInfo.status !== "complete") return;
 
-    const isSupported = SUPPORTED_SITES.some(site => tab.url?.startsWith(site));
-    if (!isSupported) return;
+	const isSupported = SUPPORTED_SITES.some(site => tab.url?.startsWith(site));
+	if (!isSupported) return;
 
 	const tabUrl = new URL(tab.url);
 	const pathArray = tabUrl.pathname.split("/");
@@ -52,10 +52,17 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 		return;
 	}
 
-    chrome.scripting.executeScript({
-        target: { tabId },
-        files: ["integration.js"]
-    }).catch(error => {
-        console.warn("Injection failed:", error);
-    });
+	chrome.scripting.executeScript({
+		target: { tabId },
+		files: ["integration.js"]
+	}).catch(error => {
+		console.warn("Injection failed:", error);
+	});
+});
+
+chrome.runtime.onInstalled.addListener(({ reason }) => {
+	console.log(reason);
+	if (reason === 'install') {
+		chrome.tabs.create({ url: "./docs.html" });
+	}
 });

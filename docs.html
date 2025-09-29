@@ -30,11 +30,15 @@
 </head>
 
 <body>
-	<div style="height:28px;"></div>
+	<div style="height:28px;display: inline;"></div>
 	<div style="background-color:#f2f2f2;max-width:800px;border:3px double;margin:auto;padding:14px">
-		<h1>Документация</h1>
-
-		<p>Sun Sep 28 20:52:11 MSK 2025</p>
+		<div style="display:flex;justify-content:space-between;">
+			<div>
+				<img src="./images/icon128.png" alt="logo" width="32" style="border:none;margin-right:14px;">
+				<h1 style="display:inline;">Документация</h1>
+			</div>
+			<span style="font-size:12px;">Sun Sep 28 20:52:11 MSK 2025</span>
+		</div>
 
 		<hr>
 
@@ -56,7 +60,7 @@
 		</ul>
 
 		<p>
-			Поддерживаются любые фильтры, доступные в ссылке.
+			Поддерживаются любые фильтры, доступные для категории.
 		</p>
 
 		<h3>Примеры корректного ввода</h3>
@@ -74,8 +78,8 @@ https://www.wildberries.ru/catalog/tsvety?page=1&sort=popular&priceU=100000%3B10
 			как парсинг происходит постранично.</p>
 
 		<ul>
-			<li>Ozon: <=12 товаров на странице</li>
-			<li>Wildberries: <=100 товаров на странице</li>
+			<li>Ozon: <=<b>12</b> товаров на странице</li>
+			<li>Wildberries: <=<b>100</b> товаров на странице</li>
 		</ul>
 
 		<h3>Множественный ввод</h3>
@@ -155,7 +159,7 @@ https://www.wildberries.ru/catalog/elektronika/smartfony-i-telefony/vse-smartfon
 
 		<h3>Основная таблица товаров</h3>
 
-		<img src="./assets/report_table.png" alt="Пример таблицы отчета" width="600">
+		<img src="./assets/report_table.png" alt="Пример таблицы отчета" width="640">
 
 		<p>
 			Таблицу можно скачать в формате CSV — это простой текстовый формат для хранения табличных данных. Файл CSV можно открыть в Excel или любом другом редакторе таблиц.
@@ -172,8 +176,7 @@ https://www.wildberries.ru/catalog/elektronika/smartfony-i-telefony/vse-smartfon
 			изменилась, этот товар добавляется в отдельную таблицу изменений, что позволяет легко отслеживать динамику цен.
 		</p>
 
-		<img src="./assets/report_chTable.png" alt="Таблица изменений" width="600">
-		<img src="./assets/report_chTable_1.png" alt="Пример изменений 1" width="600">
+		<img src="./assets/report_chTable.png" alt="Таблица изменений 1" width="600">
 		<img src="./assets/report_chTable_2.png" alt="Пример изменений 2" width="600">
 		<img src="./assets/report_chTable_3.png" alt="Пример изменений 3" width="600">
 
@@ -189,13 +192,23 @@ https://www.wildberries.ru/catalog/elektronika/smartfony-i-telefony/vse-smartfon
 			Для парсинга каталога введите лимит и нажмите на ягодку.
 		</p>
 
+		<h3>Ozon</h3>
+
 		<img src="./assets/oz_i.png" alt="" width="600">
-		<img src="./assets/wb_ic.png" alt="" width="600">
-		<img src="./assets/oz_ic.png" alt="" width="600">
-		<img src="./assets/wb_ii.png" alt="" width="600">
 		<img src="./assets/oz_is.png" alt="" width="600">
+
+		<h3>Wildberries</h3>
+
+		<img src="./assets/wb_ii.png" alt="" width="600">
 		<img src="./assets/wb_is.png" alt="" width="600">
-		<img src="./assets/oz_iss.png" alt="" width="600">
+
+		<hr>
+
+		<div style="display:flex;justify-content:space-between;margin-top:26px;">
+			<a href="https://github.com/nikita55612/mpsEx">GitHub Page</a>
+			<code>mpsEx v1.0</code>
+		</div>
+
 	</div>
 </body>
 
