@@ -1,10 +1,11 @@
 
 const OZON_API_ENTRYPOINT = "https://www.ozon.ru/api/entrypoint-api.bx/page/json/v2";
 const WB_CATALOG_URL_PATTERNS = [
-	"*://u-catalog.wb.ru/*/v4/catalog*",
-	"*://u-search.wb.ru/*/search*"
+	"*://u-catalog.wb.ru/*/catalog*",
+	"*://catalog.wb.ru/*/catalog*",
+	"*://u-search.wb.ru/*/search*",
+	"*://search.wb.ru/*/search*",
 ];
-
 const DEFAULT_TIMEOUT = 10000;
 
 
@@ -61,9 +62,6 @@ function parseOzonProduct(item) {
 		const images = item?.tileImage?.items || [];
 
 		const prices = [];
-		let nameFound = false;
-		let ratingFound = false;
-		let reviewsFound = false;
 
 		for (const state of mainState) {
 			switch (state.type) {
@@ -79,7 +77,6 @@ function parseOzonProduct(item) {
 				case 'textAtom':
 					if (state.id === 'name' && state.textAtom?.text) {
 						productData.name = state.textAtom.text.trim();
-						nameFound = true;
 					}
 					break;
 
@@ -90,12 +87,9 @@ function parseOzonProduct(item) {
 
 						if (automationId === 'tile-list-rating' && labelItem.title) {
 							productData.rating = parseFloat(labelItem.title.trim()) || 0;
-							ratingFound = true;
 						} else if (automationId === 'tile-list-comments' && labelItem.title) {
-							// Безопасное извлечение количества отзывов
 							const reviewsText = labelItem.title.split(' ')[0]?.replace(/[ ]/g, '');
 							productData.reviews = parseInt(reviewsText, 10) || 0;
-							reviewsFound = true;
 						}
 					}
 					break;
@@ -126,11 +120,7 @@ function parseOzonCatalogContent(rawJson) {
 		data: { items: new Map() },
 		nextPage: null,
 		error: null,
-		stats: {
-			totalItems: 0,
-			skippedItems: 0,
-			parsedItems: 0
-		}
+		totalItems: 0,
 	};
 
 	try {
@@ -142,8 +132,6 @@ function parseOzonCatalogContent(rawJson) {
 			response.error = 'Отсутствует или некорректно поле widgetStates';
 			return response;
 		}
-
-		let hasCatalogData = false;
 
 		for (const [widgetKey, widgetValue] of Object.entries(widgetStates)) {
 			if (typeof widgetValue !== 'string') continue;
@@ -169,18 +157,14 @@ function parseOzonCatalogContent(rawJson) {
 					if (!Array.isArray(widgetData?.items)) {
 						continue;
 					}
-					hasCatalogData = true;
 
 					for (const item of widgetData.items) {
-						response.stats.totalItems++;
+						response.totalItems++;
 
 						const parseResult = parseOzonProduct(item);
 						if (parseResult) {
 							const [productId, productData] = parseResult;
 							response.data.items.set(productId, productData);
-							response.stats.parsedItems++;
-						} else {
-							response.stats.skippedItems++;
 						}
 					}
 				}
@@ -190,7 +174,7 @@ function parseOzonCatalogContent(rawJson) {
 			}
 		}
 
-		if (!hasCatalogData && response.stats.totalItems === 0) {
+		if (response.totalItems === 0) {
 			response.error = 'Не найдено данных товаров в ответе';
 		}
 
@@ -368,6 +352,15 @@ async function parseWildberriesCatalog(result, url, limit = 0) {
 	const startTime = Date.now();
 
 	try {
+
+		// const urlObject = new URL(url);
+		// let page = urlObject.searchParams.get("page");
+
+		// if (!rawJson) {
+		// 		result.error = "Не удалось получить JSON со страницы каталога";
+		// 		break;
+		// 	}
+
 		while (true) {
 			const tab = await openTabWithTimeout(url);
 

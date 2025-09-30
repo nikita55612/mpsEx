@@ -16,18 +16,14 @@ const TABLE_HEADERS = {
 	changes: ["image", "id", "name", "oldPrice", ["price", "tableOfChanges", 0, 0], ["diff", "tableOfChanges", 1, 0], "rating", ["reviews", "tableOfChanges", 2, 1]],
 };
 
-/**
- * Экранирует значение для CSV
- */
+const elements = {};
+
 const escapeCsvValue = (value) => {
 	if (value == null) return "";
 	const str = String(value);
 	return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
 };
 
-/**
- * Конвертирует JSON-массив в CSV-строку
- */
 const jsonToCsv = (data, { headers = null, delimiter = ",", includeHeader = true } = {}) => {
 	if (!Array.isArray(data) || data.length === 0) return "";
 
@@ -43,9 +39,6 @@ const jsonToCsv = (data, { headers = null, delimiter = ",", includeHeader = true
 	return rows.join("\n");
 };
 
-/**
- * Скачивание CSV файла
- */
 const exportCsv = async (csvContent, filename = DEFAULT_FILENAME) => {
 	try {
 		const blob = new Blob([CSV_BOM + csvContent], { type: CSV_FILE_TYPE });
@@ -65,9 +58,6 @@ const exportCsv = async (csvContent, filename = DEFAULT_FILENAME) => {
 	}
 };
 
-/**
- * Создаёт ячейку таблицы (td)
- */
 const createCell = (content, options = {}) => {
 	const td = document.createElement("td");
 
@@ -105,9 +95,6 @@ const sortTable = (e) => {
 	table.appendChild(frag);
 };
 
-/**
- * Создаёт строку таблицы с заголовками
- */
 const createHeaderRow = (columns) => {
 	const row = document.createElement("tr");
 	columns.forEach((col) => {
@@ -131,35 +118,26 @@ const createHeaderRow = (columns) => {
 	return row;
 };
 
-/**
- * Создаёт HTML-элемент изображения
- */
 const createImage = (src, width = 52) => {
 	const img = document.createElement("img");
 	Object.assign(img, { src, width, loading: "lazy" });
 	return img;
 };
 
-/**
- * Создаёт ссылку
- */
 const createLink = (url, text) => {
 	const a = document.createElement("a");
 	Object.assign(a, { href: url, textContent: text, target: "_blank" });
 	return a;
 };
 
-/**
- * Сохраняет текущий отчёт в CSV
- */
 const saveReportAsCsv = () => {
 	if (!lastReportData) return;
 
 	try {
-		const headersCheckbox = document.getElementById("headersCheckbox").checked;
-		const items = Object.values(lastReportData.data.items);
+		const headersCheckbox = elements.headersCheckbox.checked;
+		const items = Object.values(lastReportData.items);
 		const firstId = items[0]?.id || 0;
-		const filename = `${reportId}_${lastReportData.marketplace}_${firstId}_${lastReportData.data.totalItems}`;
+		const filename = `${reportId}_${lastReportData.marketplace}_${firstId}_${lastReportData.totalItems}`;
 		const content = jsonToCsv(items, { includeHeader: headersCheckbox });
 		exportCsv(content, filename);
 	} catch (err) {
@@ -167,37 +145,42 @@ const saveReportAsCsv = () => {
 	}
 };
 
-/**
- * Строит таблицу с основным отчётом
- */
 const buildReport = (data) => {
 	lastReportData = data;
 
-	const { params, data: reportData, marketplace, elapsedTime, timestamp, error } = lastReportData;
+	const {
+		params,
+		marketplace,
+		totalItems,
+		items,
+		elapsedTime,
+		timestamp,
+		error
+	} = lastReportData;
 
 	const rTime = new Date(timestamp);
 
-	document.getElementById("rQuery").textContent = params.query;
-	document.getElementById("rLimit").textContent = params.limit;
-	document.getElementById("rMP").textContent = marketplace === "wb" ? "Wildberries" : "Ozon";
-	document.getElementById("rTotalItems").textContent = reportData.totalItems;
-	document.getElementById("rElapsed").textContent = `${elapsedTime} ms`;
-	document.getElementById("rTime").textContent = rTime.toLocaleString();
-	document.getElementById("rError").textContent = error || "";
+	elements.rQuery.textContent = params.query;
+	elements.rLimit.textContent = params.limit;
+	elements.rMP.textContent = marketplace === "wb" ? "Wildberries" : "Ozon";
+	elements.rTotalItems.textContent = totalItems;
+	elements.rElapsed.textContent = `${elapsedTime} ms`;
+	elements.rTime.textContent = rTime.toLocaleString();
+	elements.rError.textContent = error || "";
 
-	if (reportData.totalItems === 0) {
-		if (error) document.getElementById("tryAgainBtn").hidden = false;
+	if (totalItems === 0) {
+		if (error) elements.tryAgainBtn.hidden = false;
 		return;
 	}
 
-	document.getElementById("actionBlock").style.display = "block";
+	elements.actionBlock.style.display = "block";
 
-	const table = document.getElementById("reportTable");
+	const table = elements.reportTable;
 	table.hidden = false;
 	table.innerHTML = "";
 	table.appendChild(createHeaderRow(TABLE_HEADERS.report));
 
-	Object.values(reportData.items).forEach((item) => {
+	Object.values(items).forEach((item) => {
 		const row = document.createElement("tr");
 		row.setAttribute("sort-data", `${item.price} ${item.reviews}`);
 		row.appendChild(createCell(createImage(item.image)));
@@ -210,14 +193,11 @@ const buildReport = (data) => {
 	});
 };
 
-/**
- * Строит таблицу изменений цен
- */
 const buildTableOfChanges = (items) => {
 	if (items.length === 0) return;
 
-	document.getElementById("tableOfChangesBlock").hidden = false;
-	const table = document.getElementById("tableOfChanges");
+	elements.tableOfChangesBlock.hidden = false;
+	const table = elements.tableOfChanges;
 
 	if (table.childElementCount === 0) {
 		table.appendChild(createHeaderRow(TABLE_HEADERS.changes));
@@ -245,23 +225,19 @@ const buildTableOfChanges = (items) => {
 		changesCount++;
 	});
 
-	document.getElementById("changesCountTxt").textContent = `(${changesCount})`;
+	elements.changesCountTxt.textContent = `(${changesCount})`;
 	const changesDiffCount = changesCount - oldChangesCount;
 	if (changesDiffCount > 0) {
-		document.getElementById("changesDiffCountTxt").textContent = `+${changesDiffCount}`;
+		elements.changesDiffCountTxt.textContent = `+${changesDiffCount}`;
 	} else {
-		document.getElementById("changesDiffCountTxt").textContent = "";
+		elements.changesDiffCountTxt.textContent = "";
 	}
 };
 
-/**
- * Обновляет отчёт, проверяет изменения цен
- */
 const updateReport = () => {
 	if (!lastReportData) return;
 
-	const loadUpdateStatus = document.getElementById("loadUpdateStatus");
-	loadUpdateStatus.hidden = false;
+	elements.loadUpdateStatus.hidden = false;
 
 	chrome.runtime.sendMessage(
 		{
@@ -275,14 +251,14 @@ const updateReport = () => {
 			},
 		},
 		(response) => {
-			loadUpdateStatus.hidden = true;
+			elements.loadUpdateStatus.hidden = true;
 
 			if (lastReportData) {
-				Object.values(lastReportData.data.items).forEach(({ id, price }) => {
+				Object.values(lastReportData.items).forEach(({ id, price }) => {
 					pricesStore[id] = price;
 				});
 
-				const changedItems = Object.entries(response.data.items)
+				const changedItems = Object.entries(response.items)
 					.map(([key, item]) => {
 						const oldPrice = pricesStore[key];
 						if (!oldPrice || oldPrice <= 0 || item.price <= 0 || item.price === oldPrice) return null;
@@ -300,22 +276,13 @@ const updateReport = () => {
 	);
 };
 
-/**
- * Настраивает обработчики событий
- */
 const setupEventListeners = () => {
-	const tryAgainBtn = document.getElementById("tryAgainBtn");
-	const updateBtn = document.getElementById("updateBtn");
-	const exportCsvBtn = document.getElementById("exportCsvBtn");
-	const copyCsvBtn = document.getElementById("copyCsvBtn");
-	const clearTableBtn = document.getElementById("clearTableOfChanges");
+	elements.exportCsvBtn.addEventListener("click", saveReportAsCsv);
 
-	exportCsvBtn.addEventListener("click", saveReportAsCsv);
-
-	copyCsvBtn.addEventListener("click", () => {
+	elements.copyCsvBtn.addEventListener("click", () => {
 		if (!lastReportData) return;
-		const headersCheckbox = document.getElementById("headersCheckbox").checked;
-		const content = jsonToCsv(Object.values(lastReportData.data.items), { includeHeader: headersCheckbox });
+		const headersCheckbox = elements.headersCheckbox.checked;
+		const content = jsonToCsv(Object.values(lastReportData.items), { includeHeader: headersCheckbox });
 		try {
 			navigator.clipboard.writeText(content);
 		} catch (err) {
@@ -323,8 +290,8 @@ const setupEventListeners = () => {
 		}
 	});
 
-	tryAgainBtn.addEventListener("click", () => {
-		tryAgainBtn.hidden = true;
+	elements.tryAgainBtn.addEventListener("click", () => {
+		elements.tryAgainBtn.hidden = true;
 		updateReport();
 		const currTab = chrome.tabs.getCurrent();
 		if (currTab) {
@@ -332,9 +299,9 @@ const setupEventListeners = () => {
 		}
 	});
 
-	updateBtn.addEventListener("click", () => {
-		updateBtn.disabled = true;
-		setTimeout(() => (updateBtn.disabled = false), 1000);
+	elements.updateBtn.addEventListener("click", () => {
+		elements.updateBtn.disabled = true;
+		setTimeout(() => (elements.updateBtn.disabled = false), 1000);
 		updateReport();
 		const currTab = chrome.tabs.getCurrent();
 		if (currTab) {
@@ -342,16 +309,42 @@ const setupEventListeners = () => {
 		}
 	});
 
-	clearTableBtn.addEventListener("click", () => {
-		document.getElementById("tableOfChangesBlock").hidden = true;
-		document.getElementById("tableOfChanges").innerHTML = "";
-		document.getElementById("changesCountTxt").innerHTML = "";
-		document.getElementById("changesDiffCountTxt").innerHTML = "";
+	elements.clearTableBtn.addEventListener("click", () => {
+		elements.tableOfChangesBlock.hidden = true;
+		elements.tableOfChanges.innerHTML = "";
+		elements.changesCountTxt.innerHTML = "";
+		elements.changesDiffCountTxt.innerHTML = "";
 		changesCount = 0;
 	});
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+	Object.assign(elements, {
+		reportTable: document.getElementById("reportTable"),
+		tryAgainBtn: document.getElementById("tryAgainBtn"),
+		updateBtn: document.getElementById("updateBtn"),
+		exportCsvBtn: document.getElementById("exportCsvBtn"),
+		copyCsvBtn: document.getElementById("copyCsvBtn"),
+		clearTableBtn: document.getElementById("clearTableOfChanges"),
+		headersCheckbox: document.getElementById("headersCheckbox"),
+		loadUpdateStatus: document.getElementById("loadUpdateStatus"),
+
+		tableOfChangesBlock: document.getElementById("tableOfChangesBlock"),
+		tableOfChanges: document.getElementById("tableOfChanges"),
+		changesCountTxt: document.getElementById("changesCountTxt"),
+		changesDiffCountTxt: document.getElementById("changesDiffCountTxt"),
+		actionBlock: document.getElementById("actionBlock"),
+
+		rQuery: document.getElementById("rQuery"),
+		rLimit: document.getElementById("rLimit"),
+		rMP: document.getElementById("rMP"),
+		rTotalItems: document.getElementById("rTotalItems"),
+		rElapsed: document.getElementById("rElapsed"),
+		rTime: document.getElementById("rTime"),
+		rError: document.getElementById("rError"),
+
+	});
+
 	reportId = Math.random().toString(36).slice(-4);
 	document.title = `${reportId} Отчет`;
 	document.getElementById("reportTitelId").textContent = `(${reportId})`;

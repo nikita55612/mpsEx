@@ -1,14 +1,15 @@
-import Parser from "./parser.js";
+// import Parser from "./parser.js";
+import Parser from "./parser_v2.js";
 
 async function renderReport(result, active = true) {
 	const tab = await chrome.tabs.create({
-		url: chrome.runtime.getURL('report.html'), active
+		url: chrome.runtime.getURL("report.html"), active
 	});
 
 	chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-		if (tabId === tab.id && info.status === 'complete') {
+		if (tabId === tab.id && info.status === "complete") {
 			chrome.tabs.onUpdated.removeListener(listener);
-			chrome.tabs.sendMessage(tab.id, { action: 'renderReport', data: result });
+			chrome.tabs.sendMessage(tab.id, { action: "renderReport", data: result });
 		}
 	});
 }
@@ -38,13 +39,11 @@ const SUPPORTED_SITES = [
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 	if (!tab.active) return;
-	if (!tab.url) return;
 	if (changeInfo.status !== "complete") return;
+	if (!tab.url) return;
 
 	const isSupported = SUPPORTED_SITES.some(site => tab.url?.startsWith(site));
 	if (!isSupported) return;
-
-	if (tab.url?.startsWith("https://www.ozon.ru/api/")) return;
 
 	const tabUrl = new URL(tab.url);
 	const pathArray = tabUrl.pathname.split("/");
@@ -59,9 +58,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 	chrome.scripting.executeScript({
 		target: { tabId },
 		files: ["integration.js"]
-	}).catch(error => {
-		console.warn("Injection failed:", error);
-	});
+	}).catch(_ => {});
 });
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {

@@ -24,8 +24,10 @@
 	],
 	"host_permissions": [
 		"*://www.ozon.ru/*",
-		"*://u-catalog.wb.ru/*",
+		"*://u-catalog.wb.ru/*/catalog*",
+		"*://catalog.wb.ru/*/catalog*",
 		"*://u-search.wb.ru/*/search*",
+		"*://search.wb.ru/*/search*",
 		"*://www.wildberries.ru/*"
 	],
 	"web_accessible_resources": [

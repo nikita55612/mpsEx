@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (!inputQuery.value) {
 			return;
 		}
+
 		if (inputQuery.value === ".") {
 			inputQuery.value = "/seller/0";
 			limitInput.value = "1";
@@ -27,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		let lines = [...new Set(inputQuery.value.trim().split("\n"))];
 		const active = lines.length <= 1;
 
-		for (var line of lines) {
+		for (let line of lines) {
 			line = line.trim();
 
 			if (line.length <= 1) {
