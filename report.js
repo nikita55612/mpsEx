@@ -6,10 +6,7 @@ const pricesStore = {};
 const CSV_FILE_TYPE = "text/csv;charset=utf-8;";
 const CSV_BOM = "\uFEFF";
 const DEFAULT_FILENAME = "data";
-const PRICE_DIFF_COLORS = {
-	positive: "green",
-	negative: "red",
-};
+const PRICE_DIFF_COLORS = { positive: "green", negative: "red" };
 
 const TABLE_HEADERS = {
 	report: ["image", "id", "name", ["price", "reportTable", 0, 0], "rating", ["reviews", "reportTable", 1, 1]],
@@ -18,154 +15,142 @@ const TABLE_HEADERS = {
 
 const elements = {};
 
+const el = (tag, props = {}, children = []) => {
+	const node = document.createElement(tag);
+	for (const [k, v] of Object.entries(props)) {
+		if (k === "style") Object.assign(node.style, v);
+		else if (k === "attrs") Object.entries(v).forEach(([a, val]) => node.setAttribute(a, val));
+		else if (k === "events") Object.entries(v).forEach(([e, fn]) => node.addEventListener(e, fn));
+		else node[k] = v;
+	}
+	(children || []).forEach(ch => node.appendChild(ch));
+	return node;
+};
+
 const escapeCsvValue = (value) => {
 	if (value == null) return "";
-	const str = String(value);
-	return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+	const s = String(value);
+	return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
 const jsonToCsv = (data, { headers = null, delimiter = ",", includeHeader = true } = {}) => {
 	if (!Array.isArray(data) || data.length === 0) return "";
-
 	const keys = headers || [...new Set(data.flatMap(Object.keys))];
-	const rows = [];
-
-	if (includeHeader) {
-		rows.push(keys.map(escapeCsvValue).join(delimiter));
-	}
-
-	rows.push(...data.map((item) => keys.map((key) => escapeCsvValue(item[key])).join(delimiter)));
-
+	const rows = includeHeader ? [keys.map(escapeCsvValue).join(delimiter)] : [];
+	for (const item of data) rows.push(keys.map(k => escapeCsvValue(item[k])).join(delimiter));
 	return rows.join("\n");
 };
 
-const exportCsv = async (csvContent, filename = DEFAULT_FILENAME) => {
+const exportCsv = (csvContent, filename = DEFAULT_FILENAME) => {
 	try {
 		const blob = new Blob([CSV_BOM + csvContent], { type: CSV_FILE_TYPE });
 		const url = URL.createObjectURL(blob);
-
-		const link = Object.assign(document.createElement("a"), {
-			href: url,
-			download: `${filename}.csv`,
-		});
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-
+		const a = Object.assign(document.createElement("a"), { href: url, download: `${filename}.csv` });
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
 		setTimeout(() => URL.revokeObjectURL(url), 100);
-	} catch (err) {
-		console.error("Ошибка при сохранении CSV:", err);
+	} catch (e) {
+		console.error("Ошибка при сохранении CSV:", e);
 	}
 };
 
 const createCell = (content, options = {}) => {
-	const td = document.createElement("td");
-
-	if (typeof content === "string" || typeof content === "number") {
-		td.textContent = content;
-	} else if (content instanceof HTMLElement) {
-		td.appendChild(content);
-	}
-
+	const td = el("td");
+	if (content instanceof Node) td.appendChild(content);
+	else td.textContent = content ?? "";
 	if (options.style) Object.assign(td.style, options.style);
-
 	return td;
 };
 
-const sortTable = (e) => {
-	const element = e.target;
-	if (!element) return;
-
-	const sortTableId = element.getAttribute("sort-table");
-	const sortPart = parseInt(element.getAttribute("sort-part"), 10);
-	const sortDir = parseInt(element.getAttribute("sort-dir"), 10);
-
-	const table = document.getElementById(sortTableId);
-	const rows = Array.from(table.children).slice(1);
-
-	const prepared = rows.map(row => ({
-		row,
-		value: parseFloat(row.getAttribute("sort-data").split(" ")[sortPart])
-	}));
-
-	prepared.sort((a, b) => sortDir == 0 ? a.value - b.value : b.value - a.value);
-
-	const frag = document.createDocumentFragment();
-	prepared.forEach(({ row }) => frag.appendChild(row));
-	table.appendChild(frag);
-};
-
 const createHeaderRow = (columns) => {
-	const row = document.createElement("tr");
-	columns.forEach((col) => {
-		const th = document.createElement("th");
-		if (typeof col === "object") {
-			th.textContent = col[0];
-			th.setAttribute("sort-table", col[1]);
-			th.setAttribute("sort-part", col[2]);
-			th.setAttribute("sort-dir", col[3]);
-			th.style.cursor = "pointer";
-			th.style.color = "blue";
-			th.style.textDecoration = "underline";
-			th.addEventListener("click", (e) => {
-				sortTable(e);
+	const tr = el("tr");
+	columns.forEach(col => {
+		if (Array.isArray(col)) {
+			const [text, table, part, dir] = col;
+			const th = el("th", {
+				textContent: text,
+				attrs: { "sort-table": table, "sort-part": String(part), "sort-dir": String(dir) },
+				style: { cursor: "pointer", color: "blue", textDecoration: "underline" },
+				events: { click: sortTable }
 			});
+			tr.appendChild(th);
 		} else {
-			th.textContent = col;
+			tr.appendChild(el("th", { textContent: col }));
 		}
-		row.appendChild(th);
 	});
-	return row;
+	return tr;
 };
 
-const createImage = (src, width = 52) => {
-	const img = document.createElement("img");
-	Object.assign(img, { src, width, loading: "lazy" });
-	return img;
+const createImage = (src, width = 52) => el("img", { src, width, loading: "lazy" });
+
+const createLink = (href, text) => el("a", { href, textContent: text, target: "_blank" });
+
+const getTableExportDataUncheckedSet = () => {
+	const opts = elements.tableExportDataOptions.querySelectorAll('input[type="checkbox"]');
+	const set = new Set();
+	opts.forEach(i => { if (!i.checked) set.add(i.value); });
+	return set;
 };
 
-const createLink = (url, text) => {
-	const a = document.createElement("a");
-	Object.assign(a, { href: url, textContent: text, target: "_blank" });
-	return a;
+const getLastReportDataItemsForExport = () => {
+	if (!lastReportData) return [];
+	const unchecked = getTableExportDataUncheckedSet();
+	const items = Object.values(lastReportData.items);
+	if (unchecked.size === 0) return items;
+	return items.map(item => Object.keys(item).reduce((acc, k) => {
+		if (!unchecked.has(k)) acc[k] = item[k];
+		return acc;
+	}, {}));
 };
 
 const saveReportAsCsv = () => {
 	if (!lastReportData) return;
-
 	try {
-		const headersCheckbox = elements.headersCheckbox.checked;
-		const items = Object.values(lastReportData.items);
-		const firstId = items[0]?.id || 0;
+		const includeHeader = elements.headersCheckbox.checked;
+		const items = getLastReportDataItemsForExport();
+		const firstId = items[0]?.id ?? 0;
 		const filename = `${reportId}_${lastReportData.marketplace}_${firstId}_${lastReportData.totalItems}`;
-		const content = jsonToCsv(items, { includeHeader: headersCheckbox });
+		const content = jsonToCsv(items, { includeHeader });
 		exportCsv(content, filename);
 	} catch (err) {
 		console.error("Ошибка при сохранении отчёта в CSV:", err);
 	}
 };
 
+const safeGetNumberFromAttr = (el, name, fallback = 0) => {
+	const v = el?.getAttribute(name);
+	return Number.isFinite(+v) ? +v : fallback;
+};
+
+function sortTable(e) {
+	const target = e.currentTarget || e.target;
+	const sortTableId = target.getAttribute("sort-table");
+	const sortPart = parseInt(target.getAttribute("sort-part") || "0", 10);
+	const sortDir = parseInt(target.getAttribute("sort-dir") || "0", 10);
+	const table = document.getElementById(sortTableId);
+	if (!table) return;
+	const rows = Array.from(table.children).slice(1);
+	const prepared = rows.map(row => {
+		const parts = String(row.getAttribute("sort-data") || "").split(" ");
+		const val = parseFloat(parts[sortPart]) || 0;
+		return { row, value: val };
+	});
+	prepared.sort((a, b) => sortDir === 0 ? a.value - b.value : b.value - a.value);
+	const frag = document.createDocumentFragment();
+	prepared.forEach(p => frag.appendChild(p.row));
+	table.appendChild(frag);
+}
+
 const buildReport = (data) => {
 	lastReportData = data;
-
-	const {
-		params,
-		marketplace,
-		totalItems,
-		items,
-		elapsedTime,
-		timestamp,
-		error
-	} = lastReportData;
-
-	const rTime = new Date(timestamp);
-
-	elements.rQuery.textContent = params.query;
-	elements.rLimit.textContent = params.limit;
+	const { params = {}, marketplace = "", totalItems = 0, items = {}, elapsedTime = 0, timestamp = Date.now(), error = "" } = lastReportData || {};
+	elements.rQuery.textContent = params.query ?? "";
+	elements.rLimit.textContent = params.limit ?? "";
 	elements.rMP.textContent = marketplace === "wb" ? "Wildberries" : "Ozon";
 	elements.rTotalItems.textContent = totalItems;
 	elements.rElapsed.textContent = `${elapsedTime} ms`;
-	elements.rTime.textContent = rTime.toLocaleString();
+	elements.rTime.textContent = new Date(timestamp).toLocaleString();
 	elements.rError.textContent = error || "";
 
 	if (totalItems === 0) {
@@ -174,73 +159,57 @@ const buildReport = (data) => {
 	}
 
 	elements.actionBlock.style.display = "block";
-
 	const table = elements.reportTable;
 	table.hidden = false;
 	table.innerHTML = "";
 	table.appendChild(createHeaderRow(TABLE_HEADERS.report));
 
-	Object.values(items).forEach((item) => {
-		const row = document.createElement("tr");
-		row.setAttribute("sort-data", `${item.price} ${item.reviews}`);
-		row.appendChild(createCell(createImage(item.image)));
-		row.appendChild(createCell(item.id));
-		row.appendChild(createCell(createLink(item.url, item.name), { style: { maxWidth: "800px", wordWrap: "break-word" } }));
-		row.appendChild(createCell(item.price));
-		row.appendChild(createCell(item.rating));
-		row.appendChild(createCell(item.reviews));
+	Object.values(items).forEach(item => {
+		const row = el("tr", {}, [
+			createCell(createImage(item.image)),
+			createCell(item.id),
+			createCell(createLink(item.url, item.name), { style: { maxWidth: "800px", wordWrap: "break-word" } }),
+			createCell(item.price),
+			createCell(item.rating),
+			createCell(item.reviews)
+		]);
+		row.setAttribute("sort-data", `${item.price ?? 0} ${item.reviews ?? 0}`);
 		table.appendChild(row);
 	});
 };
 
 const buildTableOfChanges = (items) => {
-	if (items.length === 0) return;
-
+	if (!Array.isArray(items) || items.length === 0) return;
 	elements.tableOfChangesBlock.hidden = false;
 	const table = elements.tableOfChanges;
-
-	if (table.childElementCount === 0) {
-		table.appendChild(createHeaderRow(TABLE_HEADERS.changes));
-	}
-
-	const oldChangesCount = changesCount;
-
-	items.forEach((item) => {
-		const row = document.createElement("tr");
-		row.setAttribute("sort-data", `${item.price} ${item.diff} ${item.reviews}`);
-		row.appendChild(createCell(createImage(item.image)));
-		row.appendChild(createCell(item.id));
-		row.appendChild(createCell(createLink(item.url, item.name), { style: { maxWidth: "800px", wordWrap: "break-word" } }));
-		row.appendChild(createCell(item.oldPrice));
-		row.appendChild(createCell(item.price));
-		row.appendChild(
-			createCell(`${item.diff}%`, {
-				style: { color: item.diff > 0 ? PRICE_DIFF_COLORS.positive : PRICE_DIFF_COLORS.negative },
-			})
-		);
-		row.appendChild(createCell(item.rating));
-		row.appendChild(createCell(item.reviews));
-
+	if (table.childElementCount === 0) table.appendChild(createHeaderRow(TABLE_HEADERS.changes));
+	const before = changesCount;
+	items.forEach(item => {
+		const diffColor = item.diff > 0 ? PRICE_DIFF_COLORS.positive : PRICE_DIFF_COLORS.negative;
+		const row = el("tr", {}, [
+			createCell(createImage(item.image)),
+			createCell(item.id),
+			createCell(createLink(item.url, item.name), { style: { maxWidth: "800px", wordWrap: "break-word" } }),
+			createCell(item.oldPrice),
+			createCell(item.price),
+			createCell(`${item.diff}%`, { style: { color: diffColor } }),
+			createCell(item.rating),
+			createCell(item.reviews)
+		]);
+		row.setAttribute("sort-data", `${item.price ?? 0} ${item.diff ?? 0} ${item.reviews ?? 0}`);
 		table.appendChild(row);
 		changesCount++;
 	});
-
 	elements.changesCountTxt.textContent = `(${changesCount})`;
-	const changesDiffCount = changesCount - oldChangesCount;
-	if (changesDiffCount > 0) {
-		elements.changesDiffCountTxt.textContent = `+${changesDiffCount}`;
-	} else {
-		elements.changesDiffCountTxt.textContent = "";
-	}
+	const diff = changesCount - before;
+	elements.changesDiffCountTxt.textContent = diff > 0 ? `+${diff}` : "";
 };
 
 const updateReport = () => {
 	if (!lastReportData) return;
-
 	elements.loadUpdateStatus.hidden = false;
-
-	chrome.runtime.sendMessage(
-		{
+	try {
+		chrome.runtime.sendMessage({
 			action: "parseCatalog",
 			data: {
 				query: lastReportData.params.query,
@@ -248,32 +217,30 @@ const updateReport = () => {
 				open: false,
 				return: true,
 				active: false
-			},
-		},
-		(response) => {
+			}
+		}, (response) => {
 			elements.loadUpdateStatus.hidden = true;
-
+			if (!response) return;
 			if (lastReportData) {
-				Object.values(lastReportData.items).forEach(({ id, price }) => {
+				Object.values(lastReportData.items || {}).forEach(({ id, price }) => {
 					pricesStore[id] = price;
 				});
-
-				const changedItems = Object.entries(response.items)
+				const changedItems = Object.entries(response.items || {})
 					.map(([key, item]) => {
 						const oldPrice = pricesStore[key];
 						if (!oldPrice || oldPrice <= 0 || item.price <= 0 || item.price === oldPrice) return null;
-
 						const diff = +(((item.price - oldPrice) / oldPrice) * 100).toFixed(1);
 						return { ...item, oldPrice, diff };
 					})
 					.filter(Boolean);
-
 				buildTableOfChanges(changedItems);
 			}
-
 			buildReport(response);
-		}
-	);
+		});
+	} catch (e) {
+		elements.loadUpdateStatus.hidden = true;
+		console.error(e);
+	}
 };
 
 const setupEventListeners = () => {
@@ -281,32 +248,23 @@ const setupEventListeners = () => {
 
 	elements.copyCsvBtn.addEventListener("click", () => {
 		if (!lastReportData) return;
-		const headersCheckbox = elements.headersCheckbox.checked;
-		const content = jsonToCsv(Object.values(lastReportData.items), { includeHeader: headersCheckbox });
-		try {
-			navigator.clipboard.writeText(content);
-		} catch (err) {
-			console.error("Не удалось скопировать CSV:", err);
-		}
+		const includeHeader = elements.headersCheckbox.checked;
+		const items = getLastReportDataItemsForExport();
+		const content = jsonToCsv(items, { includeHeader });
+		navigator.clipboard?.writeText(content).catch(err => console.error("Не удалось скопировать CSV:", err));
 	});
 
 	elements.tryAgainBtn.addEventListener("click", () => {
 		elements.tryAgainBtn.hidden = true;
 		updateReport();
-		const currTab = chrome.tabs.getCurrent();
-		if (currTab) {
-			chrome.tabs.update(currTab.id, { active: true });
-		}
+		chrome.tabs.getCurrent?.(tab => { if (tab) chrome.tabs.update(tab.id, { active: true }); });
 	});
 
 	elements.updateBtn.addEventListener("click", () => {
 		elements.updateBtn.disabled = true;
 		setTimeout(() => (elements.updateBtn.disabled = false), 1000);
 		updateReport();
-		const currTab = chrome.tabs.getCurrent();
-		if (currTab) {
-			chrome.tabs.update(currTab.id, { active: true });
-		}
+		chrome.tabs.getCurrent?.(tab => { if (tab) chrome.tabs.update(tab.id, { active: true }); });
 	});
 
 	elements.clearTableBtn.addEventListener("click", () => {
@@ -315,6 +273,30 @@ const setupEventListeners = () => {
 		elements.changesCountTxt.innerHTML = "";
 		elements.changesDiffCountTxt.innerHTML = "";
 		changesCount = 0;
+	});
+
+	elements.tableExportDataDropBtn.addEventListener("click", () => {
+		elements.tableExportDataOptions.hidden = !elements.tableExportDataOptions.hidden;
+	});
+
+	elements.imageDisplay.addEventListener("click", () => {
+		elements.imageDisplay.classList.remove("visible");
+		elements.imageDisplayImg.src = "";
+	});
+
+	document.addEventListener("click", function (event) {
+		if (event.target.tagName === "IMG" && event.target.id !== "titelLogo") {
+			elements.imageDisplay.classList.add("visible");
+			elements.imageDisplayImg.src = event.target.src;
+		}
+
+		if (!elements.tableExportDataOptions.hidden) {
+			if (event.target.id !== tableExportDataDropBtn.id) {
+				if (!elements.tableExportDataOptions.contains(event.target)) {
+					elements.tableExportDataOptions.hidden = true;
+				}
+			}
+		}
 	});
 };
 
@@ -328,13 +310,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		clearTableBtn: document.getElementById("clearTableOfChanges"),
 		headersCheckbox: document.getElementById("headersCheckbox"),
 		loadUpdateStatus: document.getElementById("loadUpdateStatus"),
-
 		tableOfChangesBlock: document.getElementById("tableOfChangesBlock"),
 		tableOfChanges: document.getElementById("tableOfChanges"),
 		changesCountTxt: document.getElementById("changesCountTxt"),
 		changesDiffCountTxt: document.getElementById("changesDiffCountTxt"),
 		actionBlock: document.getElementById("actionBlock"),
-
 		rQuery: document.getElementById("rQuery"),
 		rLimit: document.getElementById("rLimit"),
 		rMP: document.getElementById("rMP"),
@@ -342,7 +322,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		rElapsed: document.getElementById("rElapsed"),
 		rTime: document.getElementById("rTime"),
 		rError: document.getElementById("rError"),
-
+		tableExportDataDropBtn: document.getElementById("tableExportDataDropBtn"),
+		tableExportDataOptions: document.getElementById("tableExportDataOptions"),
+		imageDisplay: document.getElementById('imageDisplay'),
+		imageDisplayImg: document.getElementById('imageDisplayImg'),
 	});
 
 	reportId = Math.random().toString(36).slice(-4);
@@ -352,8 +335,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	setupEventListeners();
 
 	chrome.runtime.onMessage.addListener((msg) => {
-		if (msg.action === "renderReport") {
-			buildReport(msg.data);
-		}
+		if (msg && msg.action === "renderReport") buildReport(msg.data);
 	});
 });

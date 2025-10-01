@@ -9,25 +9,51 @@
 	<title>Отчет</title>
 	<style>
 		img {
-			transition: transform 0.3s ease;
-			cursor: pointer;
-			display: inline-block;
-			position: relative;
-			z-index: 1;
-			transform-origin: top left;
+			user-select: none;
 		}
 
-		img:hover {
-			transform: scale(3);
-			z-index: 10;
-			box-shadow: 8px 8px 10px 2px rgba(0, 0, 0, 0.75);
+		.dd_content {
+			background: #f2f2f2;
+			border: 3px double #121212;
+			padding: 6px;
+			position: absolute;
+			top: 14px;
+			z-index: 998;
 		}
 
-		#titelLogo:hover {
-			transform: none !important;
-			;
-			box-shadow: none !important;
-			;
+		.dd_content ul {
+			margin: 0;
+			list-style-type: none;
+		}
+
+		.dd_content li {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			height: 22px;
+		}
+
+		#imageDisplay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.7);
+			z-index: 999;
+			display: none;
+		}
+
+		#imageDisplay.visible {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		#imageDisplayImg {
+			max-height: 80vh;
+			object-fit: contain;
+			border-radius: 4px;
 		}
 	</style>
 </head>
@@ -79,8 +105,37 @@
 		<div style="display:flex;gap:12px;align-items:center;">
 			<a href="#bottomReportTable" style="font-size:24px;">&#8615;</a>
 			<div>
-				<input type="checkbox" id="headersCheckbox" name="" value="headers" checked />
+				<input type="checkbox" id="headersCheckbox" name="" checked />
 				<label for="headersCheckbox">Заголовки</label>
+			</div>
+			<div class="dd_menu" style="position:relative;">
+				<b id="tableExportDataDropBtn" style="cursor:pointer;color:blue;text-decoration:underline;">Данные↓</b>
+				<ul id="tableExportDataOptions" class="dd_content" hidden>
+					<li>
+						<input type="checkbox" id="name_cb" value="name" name="" checked />
+						<label for="name_cb">name</label>
+					</li>
+					<li>
+						<input type="checkbox" id="price_cb" value="price" name="" checked />
+						<label for="price_cb">price</label>
+					</li>
+					<li>
+						<input type="checkbox" id="rating_cb" value="rating" name="" checked />
+						<label for="rating_cb">rating</label>
+					</li>
+					<li>
+						<input type="checkbox" id="reviews_cb" value="reviews" name="" checked />
+						<label for="reviews_cb">reviews</label>
+					</li>
+					<li>
+						<input type="checkbox" id="url_cb" value="url" name="" checked />
+						<label for="url_cb">url</label>
+					</li>
+					<li>
+						<input type="checkbox" id="image_cb" value="image" name="" checked />
+						<label for="image_cb">image</label>
+					</li>
+				</ul>
 			</div>
 			<button class="bbtn" id="copyCsvBtn">Копировать CSV</button>
 			<button class="bbtn" id="exportCsvBtn">Экспорт CSV</button>
@@ -105,6 +160,9 @@
 	<table id="reportTable" hidden>
 	</table>
 	<div id="bottomReportTable"></div>
+	<div id="imageDisplay">
+		<img id="imageDisplayImg" src="" alt="">
+	</div>
 	<a href="#actionBlock" style="font-size:24px;">&#8613;</a>
 	<script src="report.js"></script>
 </body>
