@@ -7,6 +7,8 @@
 
 ![report_table](https://github.com/nikita55612/mpsEx/blob/main/assets/report_table.png)
 
+![report_chTable](https://github.com/nikita55612/mpsEx/blob/main/assets/report_chTable.png)
+
 ![oz_is](https://github.com/nikita55612/mpsEx/blob/main/assets/oz_is.png)
 
 ![wb_is](https://github.com/nikita55612/mpsEx/blob/main/assets/wb_is.png)
